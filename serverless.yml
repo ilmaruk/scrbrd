@@ -27,14 +27,14 @@ provider:
   runtime: python3.9
 
   environment:
-#    APIG_ENDPOINT:
-#      Fn::Join:
-#        - ''
-#        - - Ref: WebsocketsApi
-#          - .execute-api.
-#          - Ref: AWS::Region
-#          - .amazonaws.com/
-#          - ${self:custom.stage}
+    APIG_ENDPOINT:
+      Fn::Join:
+        - ''
+        - - Ref: WebsocketsApi
+          - .execute-api.
+          - Ref: AWS::Region
+          - .amazonaws.com/
+          - ${self:custom.stage}
     CONNECTIONS_TABLE:
       Ref: ConnectionsTable
     BOARDS_TABLE:
