@@ -37,6 +37,8 @@ provider:
 #          - ${self:custom.stage}
     CONNECTIONS_TABLE:
       Ref: ConnectionsTable
+    BOARDS_TABLE:
+      Ref: BoardsTable
 
   iamRoleStatements:
     - Effect: Allow
@@ -49,14 +51,18 @@ provider:
         Fn::GetAtt:
           - ConnectionsTable
           - Arn
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeStream
+        - dynamodb:GetRecords
+        - dynamodb:GetShardIterator
+        - dynamodb:ListStreams
+      Resource:
+        Fn::GetAtt:
+          - BoardsTable
+          - Arn
 
 functions:
-#  authorizer:
-#    handler: src/authorizer.handler
-#
-#  broadcast:
-#    handler: src/broadcast.handler
-
   websocket:
     handler: backend/lambdas/ws_endpoint.lambda_handler
     package:
@@ -77,6 +83,19 @@ functions:
       - websocket:
           # Handles disconnect messages
           route: $disconnect
+  websocket-notify:
+    handler: backend/lambdas/ws_notify.lambda_handler
+    package:
+      include:
+        - backend/lambdas/ws_notify.py
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::GetAtt:
+              - BoardsTable
+              - StreamArn
+
 
 resources:
   Resources:
@@ -86,7 +105,17 @@ resources:
         AttributeDefinitions:
           - AttributeName: connectionId
             AttributeType: S
+          - AttributeName: boardId
+            AttributeType: S
         BillingMode: PAY_PER_REQUEST
+        GlobalSecondaryIndexes:
+          - IndexName: boardId
+            KeySchema:
+              - AttributeName: boardId
+                KeyType: HASH
+            Projection:
+              NonKeyAttributes: []
+              ProjectionType: KEYS_ONLY
         KeySchema:
           - AttributeName: connectionId
             KeyType: HASH
@@ -95,3 +124,20 @@ resources:
         TimeToLiveSpecification:
           AttributeName: ttl
           Enabled: true
+    BoardsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: boardId
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: boardId
+            KeyType: HASH
+        SSESpecification:
+          SSEEnabled: true
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+        StreamSpecification:
+          StreamViewType: NEW_IMAGE
