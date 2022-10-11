@@ -122,8 +122,7 @@ functions:
     handler: backend/lambdas/api_events_post.lambda_handler
     package:
       patterns:
-        - backend/lambdas/api_events.py
-        - backend/providers/**
+        - backend/lambdas/api_events_post.py
     events:
       - httpApi:
           method: POST
