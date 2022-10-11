@@ -12,13 +12,15 @@ custom:
 
 package:
   individually: true
-  exclude:
-    - ".*/**"
-    - "frontend/**"
-    - "**/__pycache__/**"
-    - "venv/**"
-    - "**/node_modules/**"
-    - "backend/tests/**"
+  patterns:
+    # - "!.*/**"
+    # - "!frontend/**"
+    # - "!**/__pycache__/**"
+    # - "!venv/**"
+    # - "!**/node_modules/**"
+    # - "!backend/tests/**"
+    # - "!requirements.txt"
+    - "!./**"
 
 provider:
   name: aws
@@ -39,34 +41,55 @@ provider:
       Ref: ConnectionsTable
     BOARDS_TABLE:
       Ref: BoardsTable
+    EVENTS_TABLE:
+      Ref: EventsTable
 
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - dynamodb:DeleteItem
-        - dynamodb:GetItem
-        - dynamodb:Scan
-        - dynamodb:PutItem
-      Resource:
-        Fn::GetAtt:
-          - ConnectionsTable
-          - Arn
-    - Effect: Allow
-      Action:
-        - dynamodb:DescribeStream
-        - dynamodb:GetRecords
-        - dynamodb:GetShardIterator
-        - dynamodb:ListStreams
-      Resource:
-        Fn::GetAtt:
-          - BoardsTable
-          - Arn
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:DeleteItem
+            - dynamodb:GetItem
+            - dynamodb:Scan
+            - dynamodb:PutItem
+          Resource:
+            Fn::GetAtt:
+              - ConnectionsTable
+              - Arn
+        - Effect: Allow
+          Action:
+            - dynamodb:DescribeStream
+            - dynamodb:GetRecords
+            - dynamodb:GetShardIterator
+            - dynamodb:ListStreams
+          Resource:
+            Fn::GetAtt:
+              - BoardsTable
+              - Arn
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+          Resource:
+            Fn::GetAtt:
+              - EventsTable
+              - Arn
+        - Effect: Allow
+          Action:
+            - dynamodb:DescribeStream
+            - dynamodb:GetRecords
+            - dynamodb:GetShardIterator
+            - dynamodb:ListStreams
+          Resource:
+            Fn::GetAtt:
+              - EventsTable
+              - Arn
 
 functions:
   websocket:
     handler: backend/lambdas/ws_endpoint.lambda_handler
     package:
-      include:
+      patterns:
         - backend/lambdas/ws_endpoint.py
     events:
       - websocket:
@@ -86,7 +109,7 @@ functions:
   websocket-notify:
     handler: backend/lambdas/ws_notify.lambda_handler
     package:
-      include:
+      patterns:
         - backend/lambdas/ws_notify.py
     events:
       - stream:
@@ -94,6 +117,28 @@ functions:
           arn:
             Fn::GetAtt:
               - BoardsTable
+              - StreamArn
+  api-events:
+    handler: backend/lambdas/api_events_post.lambda_handler
+    package:
+      patterns:
+        - backend/lambdas/api_events.py
+        - backend/providers/**
+    events:
+      - httpApi:
+          method: POST
+          path: /events
+  events-processor:
+    handler: backend/lambdas/events_processor.lambda_handler
+    package:
+      patterns:
+        - backend/lambdas/events_processor.py
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::GetAtt:
+              - EventsTable
               - StreamArn
 
 
@@ -134,6 +179,27 @@ resources:
         KeySchema:
           - AttributeName: boardId
             KeyType: HASH
+        SSESpecification:
+          SSEEnabled: true
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+        StreamSpecification:
+          StreamViewType: NEW_IMAGE
+    EventsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: eventId
+            AttributeType: S
+          - AttributeName: eventType
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: eventId
+            KeyType: HASH
+          - AttributeName: eventType
+            KeyType: RANGE
         SSESpecification:
           SSEEnabled: true
         TimeToLiveSpecification:
