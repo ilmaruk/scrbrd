@@ -69,6 +69,13 @@ provider:
               - Arn
         - Effect: Allow
           Action:
+            - dynamodb:UpdateItem
+          Resource:
+            Fn::GetAtt:
+              - BoardsTable
+              - Arn
+        - Effect: Allow
+          Action:
             - dynamodb:PutItem
           Resource:
             Fn::GetAtt:
