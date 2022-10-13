@@ -2,7 +2,7 @@ import os
 
 import boto3
 
-from .ddb_connections_provider import DynamoDBConnectionsProvider
+from ..providers.dynamodb import DynamoDBConnectionsProvider
 
 dynamodb = boto3.resource("dynamodb")
 

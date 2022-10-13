@@ -1,4 +1,4 @@
-from .providers import ConnectionsProvider
+from .protocols import ConnectionsProvider
 
 
 class DynamoDBConnectionsProvider(ConnectionsProvider):
