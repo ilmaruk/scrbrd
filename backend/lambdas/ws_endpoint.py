@@ -1,8 +1,6 @@
-import os
-
 import boto3
 
-from ..providers.dynamodb import DynamoDBConnectionsProvider
+from ..providers import get_connections_provider
 
 dynamodb = boto3.resource("dynamodb")
 
@@ -15,8 +13,7 @@ def lambda_handler(event, context):
     query_string_parameters = event.get("queryStringParameters", {})
     board_id = query_string_parameters.get("boardId")
 
-    connections_table = dynamodb.Table(os.environ.get("CONNECTIONS_TABLE"))
-    provider = DynamoDBConnectionsProvider(connections_table)
+    provider = get_connections_provider("dynamodb")
 
     if route_key == "$connect":
         provider.put({"connectionId": connection_id, "boardId": board_id})
