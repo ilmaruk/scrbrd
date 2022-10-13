@@ -1,20 +1,17 @@
-import boto3
 import os
+
+import boto3
 
 dynamodb = boto3.resource("dynamodb")
 
 
 def lambda_handler(event, context):
-    print("EVENT", event)
-    print("CONTEXT", context)
-
     request_context = event.get("requestContext", {})
     route_key = request_context.get("routeKey")
     connection_id = request_context.get("connectionId")
 
     query_string_parameters = event.get("queryStringParameters", {})
     board_id = query_string_parameters.get("boardId")
-    print("BOARD_ID", board_id)
 
     connections_table = dynamodb.Table(os.environ.get("CONNECTIONS_TABLE"))
 

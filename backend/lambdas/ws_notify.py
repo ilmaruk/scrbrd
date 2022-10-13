@@ -1,6 +1,9 @@
+import decimal
 import json
-import boto3
 import os
+
+import boto3
+from boto3.dynamodb.types import TypeDeserializer
 
 dynamodb = boto3.client("dynamodb")
 
@@ -35,6 +38,18 @@ def lambda_handler(event, context):
 
         connection_id = connection.get("connectionId", {}).get("S")
         api_gateway_management_api.post_to_connection(
-            Data=json.dumps(board), ConnectionId=connection_id)
+            Data=serialise_board(board), ConnectionId=connection_id)
 
     return {}
+
+
+def serialise_board(board) -> str:
+    class DecimalEncoder(json.JSONEncoder):
+        def default(self, o):
+            if isinstance(o, decimal.Decimal):
+                return str(o)
+            return super(DecimalEncoder, self).default(o)
+
+    td = TypeDeserializer()
+    return json.dumps(
+        {k: td.deserialize(v) for k, v in board.items()}, cls=DecimalEncoder)

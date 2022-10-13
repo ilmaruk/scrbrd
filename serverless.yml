@@ -59,6 +59,13 @@ provider:
               - Arn
         - Effect: Allow
           Action:
+            - dynamodb:GetItem
+          Resource:
+            Fn::GetAtt:
+              - BoardsTable
+              - Arn
+        - Effect: Allow
+          Action:
             - dynamodb:DescribeStream
             - dynamodb:GetRecords
             - dynamodb:GetShardIterator
