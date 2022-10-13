@@ -118,8 +118,15 @@ functions:
 #            identitySource:
 #              - 'route.request.header.X-Forwarded-Proto'
       - websocket:
-          # Handles disconnect messages
           route: $disconnect
+  websocket-get-board:
+    handler: backend/lambdas/ws_get_board.lambda_handler
+    package:
+      patterns:
+        - backend/lambdas/ws_get_board.py
+    events:
+      - websocket:
+          route: getBoard
   websocket-notify:
     handler: backend/lambdas/ws_notify.lambda_handler
     package:
