@@ -104,7 +104,10 @@ functions:
     handler: backend/lambdas/ws_endpoint.lambda_handler
     package:
       patterns:
+        - backend/lambdas/__init__.py
         - backend/lambdas/ws_endpoint.py
+        - backend/lambdas/ddb_connections_provider.py
+        - backend/lambdas/providers.py
     events:
       - websocket:
           route: $connect
