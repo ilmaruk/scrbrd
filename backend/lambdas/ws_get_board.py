@@ -14,7 +14,9 @@ def lambda_handler(event, _context):
     request_context = event.get("requestContext", {})
     connection_id = request_context.get("connectionId")
 
-    board = {"a": 1}  # TODO: get from DB
+    board_id = json.loads(event.get("body", "{}")).get("boardId")
+
+    board = {"a": board_id}  # TODO: get from DB
 
     api_gateway_management_api = boto3.client(
         "apigatewaymanagementapi",
